@@ -1,1 +1,97 @@
-# calendly-clone
+# Calendly Clone
+
+## Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) installed
+
+## Docker Hub Images
+- Frontend: [vishaljain007/frontend](https://hub.docker.com/r/vishaljain007/frontend)
+- Backend: [vishaljain007/backend](https://hub.docker.com/r/vishaljain007/backend)
+
+## Run
+
+1. Add the `.env` files.
+
+2. 2. Create a `compose.yml` file
+```yaml
+   services:
+     frontend:
+       container_name: frontend
+       image: vishaljain007/frontend:latest
+       ports:
+         - "3000:3000"
+       env_file:
+         - frontend/.env
+       depends_on:
+         - backend
+       networks:
+         - app-network
+       restart: on-failure
+
+     backend:
+       container_name: backend
+       image: vishaljain007/backend:latest
+       ports:
+         - "5000:5000"
+       env_file:
+         - backend/.env
+       depends_on:
+         mysql:
+           condition: service_healthy
+       networks:
+         - app-network
+       restart: on-failure
+       healthcheck:
+         test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
+         interval: 10s
+         timeout: 5s
+         retries: 5
+         start_period: 20s
+
+     mysql:
+       container_name: mysql
+       image: mysql:8.0
+       restart: always
+       environment:
+         MYSQL_ROOT_PASSWORD: root
+         MYSQL_DATABASE: scheduler_db
+         MYSQL_ROOT_HOST: "%"
+       ports:
+         - "3306:3306"
+       tmpfs:
+         - /var/lib/mysql
+       networks:
+         - app-network
+       healthcheck:
+         test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+         interval: 10s
+         timeout: 5s
+         retries: 10
+         start_period: 30s
+
+     dozzle:
+       container_name: dozzle
+       image: amir20/dozzle:latest
+       ports:
+         - "8080:8080"
+       volumes:
+         - /var/run/docker.sock:/var/run/docker.sock:ro
+       networks:
+         - app-network
+       restart: on-failure
+
+   networks:
+     app-network:
+       driver: bridge
+```
+
+3. Run
+```bash
+   docker compose up -d
+```
+
+4. Access
+ 
+5. Stop
+```bash
+   docker compose down
+```
